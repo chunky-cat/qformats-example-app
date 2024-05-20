@@ -1,0 +1,3 @@
+[submodule "deps/qformats"]
+	path = deps/qformats
+	url = https://github.com/chunky-cat/qformats
