@@ -3,7 +3,7 @@
 #include <raylib.h>
 
 #include <iostream>
-#include <locale> // std::locale, std::tolower
+#include <locale>
 
 #define LIGHTMAPPER_IMPLEMENTATION
 #define LM_DEBUG_INTERPOLATION
@@ -55,7 +55,7 @@ qformats::textures::ITexture *QuakeMap::onTextureRequest(std::string name)
     auto tex = new qformats::textures::Texture<Material>();
 
     Material mat = LoadMaterialDefault();
-
+    mat.shader = opts.shader,
     mat.maps->texture = rayTex;
     mat.maps->color = WHITE;
     tex->SetData(mat);
@@ -80,6 +80,7 @@ void QuakeMap::LoadMapFromFile(std::string fileName)
     mapInstance = qformats::map::QMap();
     mapInstance.LoadFile(fileName);
     mapInstance.GenerateGeometry();
+
     if (mapInstance.HasWads())
     {
         for (const auto &wf : mapInstance.Wads())
@@ -100,7 +101,6 @@ void QuakeMap::LoadMapFromFile(std::string fileName)
     {
         materialPool[i] = ((qformats::textures::Texture<Material> *)(textures[i]))->Data();
     }
-
     for (const auto &se : mapInstance.solidEntities)
     {
         auto m = readModelEntity(se);
@@ -117,6 +117,7 @@ QuakeModel QuakeMap::readModelEntity(const qformats::map::SolidEntity &ent)
     {
         for (const auto &p : b.polygons)
         {
+            p->RecalcNormals();
             int i = 0;
             int i_indices = 0;
             int i_uv = 0;
@@ -128,28 +129,28 @@ QuakeModel QuakeMap::readModelEntity(const qformats::map::SolidEntity &ent)
             mesh.vertices = (float *)MemAlloc(mesh.vertexCount * 3 * sizeof(float)); // 3 vertices, 3 coordinates each (x, y, z)
             mesh.tangents = (float *)MemAlloc(mesh.vertexCount * 3 * sizeof(float)); // 3 vertices, 3 coordinates each (x, y, z)
             mesh.texcoords = (float *)MemAlloc(mesh.vertexCount * 2 * sizeof(float));
-            mesh.texcoords2 = (float *)MemAlloc(mesh.vertexCount * 2 * sizeof(float));
+            //    mesh.texcoords2 = (float *)MemAlloc(mesh.vertexCount * 2 * sizeof(float));
             mesh.normals = (float *)MemAlloc(mesh.vertexCount * 3 * sizeof(float)); // 3 vertices, 3 coordinates each (x, y, z)
 
             auto atlasMeshDecl = xatlas::MeshDecl();
 
-            for (const auto &v : p->vertices)
+            for (int v = p->vertices.size() - 1; v >= 0; v--)
             {
-                mesh.vertices[i] = v.point.x / opts.inverseScale;
-                mesh.tangents[i] = v.tangent.x;
-                mesh.normals[i] = v.normal.x;
+                mesh.vertices[i] = -p->vertices[v].point.x / opts.inverseScale;
+                mesh.tangents[i] = p->vertices[v].tangent.x;
+                mesh.normals[i] = p->vertices[v].normal.x;
                 i++;
-                mesh.vertices[i] = v.point.z / opts.inverseScale;
-                mesh.tangents[i] = v.tangent.z;
-                mesh.normals[i] = v.normal.z;
+                mesh.vertices[i] = p->vertices[v].point.z / opts.inverseScale;
+                mesh.tangents[i] = p->vertices[v].tangent.z;
+                mesh.normals[i] = -p->vertices[v].normal.z;
                 i++;
-                mesh.vertices[i] = v.point.y / opts.inverseScale;
-                mesh.tangents[i] = v.tangent.y;
-                mesh.normals[i] = v.normal.y;
+                mesh.vertices[i] = p->vertices[v].point.y / opts.inverseScale;
+                mesh.tangents[i] = p->vertices[v].tangent.y;
+                mesh.normals[i] = -p->vertices[v].normal.y;
 
                 i++;
-                mesh.texcoords[i_uv++] = v.uv.x;
-                mesh.texcoords[i_uv++] = v.uv.y;
+                mesh.texcoords[i_uv++] = p->vertices[v].uv.x;
+                mesh.texcoords[i_uv++] = p->vertices[v].uv.y;
             }
             for (auto idx : p->indices)
             {
@@ -157,37 +158,10 @@ QuakeModel QuakeMap::readModelEntity(const qformats::map::SolidEntity &ent)
                 i_indices++;
             }
 
-            atlasMeshDecl.vertexPositionData = mesh.vertices;
-            atlasMeshDecl.vertexPositionStride = 3 * sizeof(float);
-            atlasMeshDecl.vertexUvData = mesh.texcoords;
-            atlasMeshDecl.vertexUvStride = 2 * sizeof(float);
-            atlasMeshDecl.vertexCount = mesh.vertexCount;
-            atlasMeshDecl.indexCount = p->indices.size();
-            atlasMeshDecl.indexFormat = xatlas::IndexFormat::UInt16;
-            atlasMeshDecl.indexData = mesh.indices;
-
-            auto err = xatlas::AddMesh(atlas, atlasMeshDecl, qm.meshes.size());
-
+            UploadMesh(&mesh, false);
             qm.meshes.push_back(mesh);
             qm.materialIDs.push_back(p->faceRef.textureID);
         }
-    }
-
-    xatlas::Generate(atlas);
-
-    for (uint32_t i = 0; i < atlas->meshCount; i++)
-    {
-        const xatlas::Mesh &atlasMesh = atlas->meshes[i];
-        int i_uv = 0;
-        for (int j = 0; j < atlasMesh.vertexCount; j++)
-        {
-            if (atlasMesh.vertexArray[j].atlasIndex < 0)
-                continue;
-            const xatlas::Vertex &atlasVert = atlasMesh.vertexArray[j];
-            qm.meshes[i].texcoords2[i_uv++] = atlasVert.uv[0];
-            qm.meshes[i].texcoords2[i_uv++] = atlasVert.uv[1];
-        }
-        UploadMesh(&qm.meshes[i], false);
     }
 
     qm.model.transform = MatrixIdentity();
