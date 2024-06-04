@@ -11,7 +11,6 @@ public:
     void Run();
 
 private:
-    Shader shader;
     Camera camera;
     QuakeMap *qmap;
 };

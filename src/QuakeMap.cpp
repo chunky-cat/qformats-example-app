@@ -55,7 +55,6 @@ qformats::textures::ITexture *QuakeMap::onTextureRequest(std::string name)
     auto tex = new qformats::textures::Texture<Material>();
 
     Material mat = LoadMaterialDefault();
-    mat.shader = opts.shader,
     mat.maps->texture = rayTex;
     mat.maps->color = WHITE;
     tex->SetData(mat);
@@ -101,7 +100,7 @@ void QuakeMap::LoadMapFromFile(std::string fileName)
     {
         materialPool[i] = ((qformats::textures::Texture<Material> *)(textures[i]))->Data();
     }
-    for (const auto &se : mapInstance.solidEntities)
+    for (const auto &se : mapInstance.GetSolidEntities())
     {
         auto m = readModelEntity(se);
         models.push_back(m);
@@ -129,28 +128,27 @@ QuakeModel QuakeMap::readModelEntity(const qformats::map::SolidEntity &ent)
             mesh.vertices = (float *)MemAlloc(mesh.vertexCount * 3 * sizeof(float)); // 3 vertices, 3 coordinates each (x, y, z)
             mesh.tangents = (float *)MemAlloc(mesh.vertexCount * 3 * sizeof(float)); // 3 vertices, 3 coordinates each (x, y, z)
             mesh.texcoords = (float *)MemAlloc(mesh.vertexCount * 2 * sizeof(float));
-            //    mesh.texcoords2 = (float *)MemAlloc(mesh.vertexCount * 2 * sizeof(float));
             mesh.normals = (float *)MemAlloc(mesh.vertexCount * 3 * sizeof(float)); // 3 vertices, 3 coordinates each (x, y, z)
 
             auto atlasMeshDecl = xatlas::MeshDecl();
 
             for (int v = p->vertices.size() - 1; v >= 0; v--)
             {
-                mesh.vertices[i] = -p->vertices[v].point.x / opts.inverseScale;
-                mesh.tangents[i] = p->vertices[v].tangent.x;
-                mesh.normals[i] = p->vertices[v].normal.x;
+                mesh.vertices[i] = -p->vertices[v].point[0] / opts.inverseScale;
+                mesh.tangents[i] = p->vertices[v].tangent[0];
+                mesh.normals[i] = p->vertices[v].normal[0];
                 i++;
-                mesh.vertices[i] = p->vertices[v].point.z / opts.inverseScale;
-                mesh.tangents[i] = p->vertices[v].tangent.z;
-                mesh.normals[i] = -p->vertices[v].normal.z;
+                mesh.vertices[i] = p->vertices[v].point[2] / opts.inverseScale;
+                mesh.tangents[i] = p->vertices[v].tangent[2];
+                mesh.normals[i] = -p->vertices[v].normal[2];
                 i++;
-                mesh.vertices[i] = p->vertices[v].point.y / opts.inverseScale;
-                mesh.tangents[i] = p->vertices[v].tangent.y;
-                mesh.normals[i] = -p->vertices[v].normal.y;
+                mesh.vertices[i] = p->vertices[v].point[1] / opts.inverseScale;
+                mesh.tangents[i] = p->vertices[v].tangent[1];
+                mesh.normals[i] = -p->vertices[v].normal[1];
 
                 i++;
-                mesh.texcoords[i_uv++] = p->vertices[v].uv.x;
-                mesh.texcoords[i_uv++] = p->vertices[v].uv.y;
+                mesh.texcoords[i_uv++] = p->vertices[v].uv[0];
+                mesh.texcoords[i_uv++] = p->vertices[v].uv[1];
             }
             for (auto idx : p->indices)
             {
@@ -179,4 +177,10 @@ QuakeModel QuakeMap::readModelEntity(const qformats::map::SolidEntity &ent)
     }
 
     return qm;
+}
+
+qformats::map::QPointEntity *QuakeMap::GetPlayerStart()
+{
+    auto ents = mapInstance.GetPointEntitiesByClass("info_player_start");
+    return ents.size() > 0 ? ents[0] : nullptr;
 }

@@ -22,6 +22,8 @@ struct QuakeMapOptions
     std::string wadPath = "wads/";
     int inverseScale = 24;
     Shader shader;
+    bool showGrid = false;
+    Color backgroundColor = WHITE;
     Color defaultColor = WHITE;
 };
 
@@ -30,7 +32,9 @@ class QuakeMap
 public:
     QuakeMap(QuakeMapOptions opts) : opts(opts){};
     void DrawQuakeSolids();
+    qformats::map::QPointEntity *GetPlayerStart();
     void LoadMapFromFile(std::string fileName);
+    const QuakeMapOptions &Opts() { return opts; }
 
 private:
     QuakeModel readModelEntity(const qformats::map::SolidEntity &ent);
