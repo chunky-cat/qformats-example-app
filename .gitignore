@@ -12,3 +12,5 @@ _deps
 build
 **.DS_Store
 **.vscode
+.idea
+cmake-build-debug

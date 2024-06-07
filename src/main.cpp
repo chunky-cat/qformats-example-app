@@ -28,7 +28,11 @@ int main()
     QuakeMapOptions opts;
     opts.texturePath = "../data/textures/";
     opts.wadPath = "/Users/tinogohlert/workspace/chunkycat/quake_data/wads/";
-    scene.LoadQuakeMap("/Users/tinogohlert/workspace/chunkycat/quake_data/maps/orig/START.MAP", opts);
+    opts.showGrid = true;
+    opts.inverseScale = 1;
+    //"/Users/tinogohlert/workspace/chunkycat/quake_data/maps/1x1.map"
+    //"/Users/tinogohlert/workspace/chunkycat/quake_data/maps/orig/START.MAP"
+    scene.LoadQuakeMap("/Users/tinogohlert/workspace/chunkycat/quake_data/maps/1x1.map", opts);
 
     auto end_time = std::chrono::high_resolution_clock::now();
     auto time = end_time - start_time;

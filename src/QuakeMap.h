@@ -32,12 +32,12 @@ class QuakeMap
 public:
     QuakeMap(QuakeMapOptions opts) : opts(opts){};
     void DrawQuakeSolids();
-    qformats::map::QPointEntity *GetPlayerStart();
+    qformats::map::PointEntityPtr GetPlayerStart();
     void LoadMapFromFile(std::string fileName);
     const QuakeMapOptions &Opts() { return opts; }
 
 private:
-    QuakeModel readModelEntity(const qformats::map::SolidEntity &ent);
+    QuakeModel readModelEntity(const qformats::map::SolidEntityPtr &ent);
     qformats::textures::ITexture *onTextureRequest(std::string name);
     Texture2D getTextureFromWad(std::string name);
     QuakeMapOptions opts;

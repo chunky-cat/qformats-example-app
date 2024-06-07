@@ -8,10 +8,6 @@
 #define LIGHTMAPPER_IMPLEMENTATION
 #define LM_DEBUG_INTERPOLATION
 #include <OpenGL/gl3.h>
-#include "thirdparty/lightmapper.h"
-
-#define RLIGHTS_IMPLEMENTATION
-#include "rlights.h"
 
 string to_lower(string s)
 {
@@ -68,7 +64,16 @@ void QuakeMap::DrawQuakeSolids()
     Vector3 position = {0.0f, 0.0f, 0.0f};
     for (const auto &m : models)
     {
-        DrawModel(m.model, position, 1, WHITE);
+        DrawModelWires(m.model, position, 1, WHITE);
+        for (int i = 0; i < m.model.meshCount; i++)
+        {
+            auto mesh = m.model.meshes[i];
+            for (int j = 0; j < mesh.triangleCount; j+=3)
+            {
+                Vector3 v{mesh.vertices[j],mesh.vertices[j+1],mesh.vertices[j+2]};
+                DrawSphere(v, 0.02, BLUE);
+            }
+        }
         break;
     }
 }
@@ -107,16 +112,17 @@ void QuakeMap::LoadMapFromFile(std::string fileName)
     }
 }
 
-QuakeModel QuakeMap::readModelEntity(const qformats::map::SolidEntity &ent)
+QuakeModel QuakeMap::readModelEntity(const qformats::map::SolidEntityPtr &ent)
 {
     QuakeModel qm;
     auto atlas = xatlas::Create();
 
-    for (const auto &b : ent.geoBrushes)
+    for (const auto &b : ent->GetBrushes())
     {
-        for (const auto &p : b.polygons)
+        for (const auto &p : b.faces)
         {
-            p->RecalcNormals();
+            if (p->noDraw) continue;
+            p->UpdateNormals();
             int i = 0;
             int i_indices = 0;
             int i_uv = 0;
@@ -158,7 +164,7 @@ QuakeModel QuakeMap::readModelEntity(const qformats::map::SolidEntity &ent)
 
             UploadMesh(&mesh, false);
             qm.meshes.push_back(mesh);
-            qm.materialIDs.push_back(p->faceRef.textureID);
+            qm.materialIDs.push_back(p->TextureID());
         }
     }
 
@@ -179,7 +185,7 @@ QuakeModel QuakeMap::readModelEntity(const qformats::map::SolidEntity &ent)
     return qm;
 }
 
-qformats::map::QPointEntity *QuakeMap::GetPlayerStart()
+qformats::map::PointEntityPtr QuakeMap::GetPlayerStart()
 {
     auto ents = mapInstance.GetPointEntitiesByClass("info_player_start");
     return ents.size() > 0 ? ents[0] : nullptr;
