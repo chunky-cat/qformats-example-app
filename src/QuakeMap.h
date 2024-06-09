@@ -23,6 +23,8 @@ struct QuakeMapOptions
     int inverseScale = 24;
     Shader shader;
     bool showGrid = false;
+    bool showVerts = false;
+    bool wireframe = false;
     Color backgroundColor = WHITE;
     Color defaultColor = WHITE;
 };

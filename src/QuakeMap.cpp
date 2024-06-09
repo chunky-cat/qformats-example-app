@@ -9,14 +9,16 @@
 #define LM_DEBUG_INTERPOLATION
 #include <OpenGL/gl3.h>
 
-string to_lower(string s)
+string
+to_lower(string s)
 {
     for (char &c : s)
         c = tolower(c);
     return s;
 }
 
-qformats::textures::ITexture *QuakeMap::onTextureRequest(std::string name)
+qformats::textures::ITexture *
+QuakeMap::onTextureRequest(std::string name)
 {
     Texture2D rayTex;
     Image image;
@@ -59,26 +61,38 @@ qformats::textures::ITexture *QuakeMap::onTextureRequest(std::string name)
     return tex;
 }
 
-void QuakeMap::DrawQuakeSolids()
+void
+QuakeMap::DrawQuakeSolids()
 {
     Vector3 position = {0.0f, 0.0f, 0.0f};
     for (const auto &m : models)
     {
-        DrawModelWires(m.model, position, 1, WHITE);
-        for (int i = 0; i < m.model.meshCount; i++)
+        if (opts.wireframe)
         {
-            auto mesh = m.model.meshes[i];
-            for (int j = 0; j < mesh.triangleCount; j+=3)
+            DrawModelWires(m.model, position, 1, WHITE);
+        }
+        else
+        {
+            DrawModel(m.model, position, 1, WHITE);
+        }
+
+        if (opts.showVerts)
+        {
+            for (int i = 0; i < m.model.meshCount; i++)
             {
-                Vector3 v{mesh.vertices[j],mesh.vertices[j+1],mesh.vertices[j+2]};
-                DrawSphere(v, 0.02, BLUE);
+                auto mesh = m.model.meshes[i];
+                for (int j = 0; j < mesh.triangleCount; j += 3)
+                {
+                    Vector3 v{mesh.vertices[j], mesh.vertices[j + 1], mesh.vertices[j + 2]};
+                    DrawSphere(v, 0.02, BLUE);
+                }
             }
         }
-        break;
     }
 }
 
-void QuakeMap::LoadMapFromFile(std::string fileName)
+void
+QuakeMap::LoadMapFromFile(std::string fileName)
 {
 
     mapInstance = qformats::map::QMap();
@@ -93,35 +107,43 @@ void QuakeMap::LoadMapFromFile(std::string fileName)
         }
     }
     mapInstance.LoadTextures([this](std::string name) -> qformats::textures::ITexture *
-                             { return this->onTextureRequest(name); });
+                             {
+                                 return this->onTextureRequest(name);
+                             });
 
     auto textures = mapInstance.GetTextures();
 
     defaultMaterial = LoadMaterialDefault();
     defaultMaterial.maps[MATERIAL_MAP_DIFFUSE].color = opts.defaultColor;
 
-    materialPool = (Material *)MemAlloc(mapInstance.GetTextures().size() * sizeof(Material));
+    materialPool = (Material *) MemAlloc(mapInstance.GetTextures().size() * sizeof(Material));
     for (int i = 0; i < textures.size(); i++)
     {
-        materialPool[i] = ((qformats::textures::Texture<Material> *)(textures[i]))->Data();
+        materialPool[i] = ((qformats::textures::Texture<Material> *) (textures[i]))->Data();
     }
+    size_t clippedFacesTotal = 0;
     for (const auto &se : mapInstance.GetSolidEntities())
     {
         auto m = readModelEntity(se);
+        clippedFacesTotal += se->StatsClippedFaces();
         models.push_back(m);
     }
+
+    std::cout << "faces clipped: " << clippedFacesTotal << std::endl;
 }
 
-QuakeModel QuakeMap::readModelEntity(const qformats::map::SolidEntityPtr &ent)
+QuakeModel
+QuakeMap::readModelEntity(const qformats::map::SolidEntityPtr &ent)
 {
     QuakeModel qm;
     auto atlas = xatlas::Create();
 
-    for (const auto &b : ent->GetBrushes())
+    for (const auto &b : ent->GetClippedBrushes())
     {
         for (const auto &p : b.faces)
         {
-            if (p->noDraw) continue;
+            if (p->noDraw)
+                continue;
             p->UpdateNormals();
             int i = 0;
             int i_indices = 0;
@@ -130,11 +152,14 @@ QuakeModel QuakeMap::readModelEntity(const qformats::map::SolidEntityPtr &ent)
             auto mesh = Mesh{0};
             mesh.triangleCount = p->indices.size() / 3;
             mesh.vertexCount = p->vertices.size();
-            mesh.indices = (ushort *)MemAlloc(p->indices.size() * sizeof(ushort));
-            mesh.vertices = (float *)MemAlloc(mesh.vertexCount * 3 * sizeof(float)); // 3 vertices, 3 coordinates each (x, y, z)
-            mesh.tangents = (float *)MemAlloc(mesh.vertexCount * 3 * sizeof(float)); // 3 vertices, 3 coordinates each (x, y, z)
-            mesh.texcoords = (float *)MemAlloc(mesh.vertexCount * 2 * sizeof(float));
-            mesh.normals = (float *)MemAlloc(mesh.vertexCount * 3 * sizeof(float)); // 3 vertices, 3 coordinates each (x, y, z)
+            mesh.indices = (ushort *) MemAlloc(p->indices.size() * sizeof(ushort));
+            mesh.vertices =
+                (float *) MemAlloc(mesh.vertexCount * 3 * sizeof(float)); // 3 vertices, 3 coordinates each (x, y, z)
+            mesh.tangents =
+                (float *) MemAlloc(mesh.vertexCount * 3 * sizeof(float)); // 3 vertices, 3 coordinates each (x, y, z)
+            mesh.texcoords = (float *) MemAlloc(mesh.vertexCount * 2 * sizeof(float));
+            mesh.normals =
+                (float *) MemAlloc(mesh.vertexCount * 3 * sizeof(float)); // 3 vertices, 3 coordinates each (x, y, z)
 
             auto atlasMeshDecl = xatlas::MeshDecl();
 
@@ -171,9 +196,9 @@ QuakeModel QuakeMap::readModelEntity(const qformats::map::SolidEntityPtr &ent)
     qm.model.transform = MatrixIdentity();
     qm.model.meshCount = qm.meshes.size();
     qm.model.materialCount = mapInstance.GetTextures().size();
-    qm.model.meshes = (Mesh *)MemAlloc(qm.model.meshCount * sizeof(Mesh));
+    qm.model.meshes = (Mesh *) MemAlloc(qm.model.meshCount * sizeof(Mesh));
     qm.model.materials = materialPool;
-    qm.model.meshMaterial = (int *)MemAlloc(qm.model.meshCount * sizeof(int));
+    qm.model.meshMaterial = (int *) MemAlloc(qm.model.meshCount * sizeof(int));
 
     for (int m = 0; m < qm.meshes.size(); m++)
     {
@@ -185,7 +210,8 @@ QuakeModel QuakeMap::readModelEntity(const qformats::map::SolidEntityPtr &ent)
     return qm;
 }
 
-qformats::map::PointEntityPtr QuakeMap::GetPlayerStart()
+qformats::map::PointEntityPtr
+QuakeMap::GetPlayerStart()
 {
     auto ents = mapInstance.GetPointEntitiesByClass("info_player_start");
     return ents.size() > 0 ? ents[0] : nullptr;

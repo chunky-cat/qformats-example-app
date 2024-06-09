@@ -8,7 +8,7 @@ Scene::Scene(int width, int height)
     SetTraceLogLevel(LOG_ERROR);
     SetConfigFlags(FLAG_MSAA_4X_HINT);
     InitWindow(800, 600, "Quake Map Viewer");
-    SetTargetFPS(60);
+    SetTargetFPS(120);
     camera = {{2.0f, 5.0f, 2.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, 45.0f, 0};
 }
 
