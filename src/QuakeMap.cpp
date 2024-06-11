@@ -127,8 +127,8 @@ void QuakeMap::LoadMapFromFile(std::string fileName)
 	for (const auto& se : mapInstance.GetSolidEntities())
 	{
 		auto m = readModelEntity(se);
-		clippedFacesTotal += se->StatsClippedFaces();
 		models.push_back(m);
+		clippedFacesTotal += se->StatsClippedFaces();
 	}
 
 	std::cout << "faces clipped: " << clippedFacesTotal << std::endl;
@@ -218,17 +218,15 @@ QuakeMap::~QuakeMap()
 {
 	for (auto& m : models)
 	{
-		for (auto& mesh : m.meshes)
-		{
-			UnloadMesh(mesh);
-		}
+		m.model.materialCount = 0;
+		m.model.materials = nullptr;
 		UnloadModel(m.model);
 	}
+
 	for (int i = 0; i < mapInstance.GetTextures().size(); i++)
 	{
-		UnloadTexture(materialPool[i].maps->texture);
 		UnloadMaterial(materialPool[i]);
-
 	}
+	UnloadMaterial(defaultMaterial);
 	MemFree(materialPool);
 }

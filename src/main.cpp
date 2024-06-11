@@ -36,7 +36,7 @@ int main()
 	//"/Users/tinogohlert/workspace/chunkycat/quake_data/maps/1x1.map"
 	//"/Users/tinogohlert/workspace/chunkycat/quake_data/maps/orig/START.MAP"
 	// /Users/tinogohlert/workspace/chunkycat/quake_data/maps/knave_9/jam9_skacky.map
-	scene.LoadQuakeMap("/Users/tinogohlert/workspace/chunkycat/quake_data/maps/orig/START.MAP", opts);
+	scene.LoadQuakeMap("/Users/tinogohlert/workspace/chunkycat/quake_data/maps/ad_crucial.map", opts);
 
 	auto end_time = std::chrono::high_resolution_clock::now();
 	auto time = end_time - start_time;
