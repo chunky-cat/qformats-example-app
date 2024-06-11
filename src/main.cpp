@@ -14,30 +14,35 @@ using std::endl;
 
 void banner()
 {
-    cout << "QFORMAT test app\n"
-         << "----------------"
-         << endl;
+	cout << "QFORMAT test app\n"
+		 << "----------------"
+		 << endl;
 }
 
 int main()
 {
-    banner();
-    auto scene = Scene();
-    auto start_time = std::chrono::high_resolution_clock::now();
+	banner();
+	auto scene = Scene();
+	auto start_time = std::chrono::high_resolution_clock::now();
 
-    QuakeMapOptions opts;
-    opts.texturePath = "../data/textures/";
-    opts.wadPath = "/Users/tinogohlert/workspace/chunkycat/quake_data/wads/";
-    opts.showGrid = true;
-    opts.inverseScale = 1;
-    //"/Users/tinogohlert/workspace/chunkycat/quake_data/maps/1x1.map"
-    //"/Users/tinogohlert/workspace/chunkycat/quake_data/maps/orig/START.MAP"
-    scene.LoadQuakeMap("/Users/tinogohlert/workspace/chunkycat/quake_data/maps/1x1.map", opts);
+	QuakeMapOptions opts;
+	opts.texturePath = "../data/textures/";
+	opts.wadPath = "/Users/tinogohlert/workspace/chunkycat/quake_data/wads/";
+	opts.showGrid = true;
+	//opts.inverseScale = 1;
+	//opts.wireframe = true;
+	//opts.showVerts = true;
 
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto time = end_time - start_time;
-    std::cout << "map compiled in: " << time / std::chrono::milliseconds(1) << " ms\n";
+	//"/Users/tinogohlert/workspace/chunkycat/quake_data/maps/1x1.map"
+	//"/Users/tinogohlert/workspace/chunkycat/quake_data/maps/orig/START.MAP"
+	// /Users/tinogohlert/workspace/chunkycat/quake_data/maps/knave_9/jam9_skacky.map
+	scene.LoadQuakeMap("/Users/tinogohlert/workspace/chunkycat/quake_data/maps/orig/START.MAP", opts);
 
-    scene.Run();
-    return 0;
+	auto end_time = std::chrono::high_resolution_clock::now();
+	auto time = end_time - start_time;
+
+	std::cout << "map compiled in: " << time / std::chrono::milliseconds(1) << " ms\n";
+
+	scene.Run();
+	return 0;
 }

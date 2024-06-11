@@ -17,7 +17,6 @@ endif()
 find_package(OpenGL REQUIRED) # error
 
 add_executable( ${PROJECT_NAME}
-    src/thirdparty/xatlas/xatlas.cpp
     src/main.cpp
     src/QuakeMap.cpp
     src/Scene.cpp
